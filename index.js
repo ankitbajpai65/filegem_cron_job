@@ -57,37 +57,26 @@ app.get("/", (req, res) => {
     res.send("Welcome to filegem cron-job server")
 })
 
-app.get("/deleteFiles", async(req, res) => {
+app.get("/deleteFiles", async (req, res) => {
     try {
         const authClient = await authorize();
 
         const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-        // const twentyFourHoursAgo = new Date(Date.now() - 1 * 60 * 60 * 1000);
 
-        const files = await FileModel.find({ uploadDate: { $gte: twentyFourHoursAgo } });
+        const files = await FileModel.find({ uploadDate: { $lt: twentyFourHoursAgo } });
         console.log(files)
 
-        if(!files){
-            res.json({
-                status: "ok",
-                message: "No files found"
-            })
+        if (!files) {
+            res.json({ status: "ok", message: "No files found" })
         }
-
         files.forEach((file) => deleteFileFromDrive(authClient, file.googleDriveId))
 
-        await FileModel.deleteMany({ uploadDate: { $gte: twentyFourHoursAgo } })
+        await FileModel.deleteMany({ uploadDate: { $lt: twentyFourHoursAgo } })
 
-        res.json({
-            status: "ok",
-            message: "File uploaded before 24 hours are deleted!"
-        })
+        res.json({ status: "ok", message: "File uploaded before 24 hours are deleted!" })
     } catch (error) {
         console.log(error)
-        res.json({
-            status: "error",
-            error
-        })
+        res.json({ status: "error", error })
     }
 })
 
