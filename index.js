@@ -29,7 +29,6 @@ async function authorize() {
 }
 
 async function deleteFileFromDrive(authClient, googleDriveId) {
-    console.log('deleteFileFromDrive runs')
     try {
         const drive = google.drive({ version: 'v3', auth: authClient });
 
@@ -39,40 +38,51 @@ async function deleteFileFromDrive(authClient, googleDriveId) {
     }
 }
 
-cron.schedule('20 23 * * *', async () => {
+// cron.schedule('21 15 * * *', async () => {
+//     console.log("cron-job runs")
+//     const authClient = await authorize();
+
+//     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+//     // const twentyFourHoursAgo = new Date(Date.now() - 1 * 60 * 60 * 1000);
+
+//     const files = await FileModel.find({ uploadDate: { $gte: twentyFourHoursAgo } });
+//     console.log(files)
+
+//     files.forEach((file) => deleteFileFromDrive(authClient, file.googleDriveId))
+
+//     await FileModel.deleteMany({ uploadDate: { $gte: twentyFourHoursAgo } })
+// })
+
+app.get("/", (req, res) => {
+    res.send("Welcome to filegem cron-job server")
+})
+
+app.delete("/deleteFiles", async(req, res) => {
     try {
-        console.log("cron jobs ran at middleware")
         const authClient = await authorize();
 
         const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
         // const twentyFourHoursAgo = new Date(Date.now() - 1 * 60 * 60 * 1000);
 
-        // const files = await FileModel.find({ uploadDate: { $lt: twentyFourHoursAgo } }, "googleDriveId");
-        const files = await FileModel.find({ uploadDate: { $gte: twentyFourHoursAgo } }, "googleDriveId");
+        const files = await FileModel.find({ uploadDate: { $gte: twentyFourHoursAgo } });
         console.log(files)
 
         files.forEach((file) => deleteFileFromDrive(authClient, file.googleDriveId))
-    } catch (error) {
-        console.error('Error deleting files:', error);
-    }
-});
-
-cron.schedule('21 23 * * *', async () => {
-    try {
-        console.log("cron jobs ran at controller")
-
-        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-        // const twentyFourHoursAgo = new Date(Date.now() - 1 * 60 * 60 * 1000);
-
-        // const files = await FileModel.find({ uploadDate: { $lt: twentyFourHoursAgo } });
-        const files = await FileModel.find({ uploadDate: { $gte: twentyFourHoursAgo } });
-        console.log(files);
 
         await FileModel.deleteMany({ uploadDate: { $gte: twentyFourHoursAgo } })
+
+        res.json({
+            status: "ok",
+            message: "File uploaded before 24 hours are deleted!"
+        })
     } catch (error) {
-        console.error('Error deleting files:', error);
+        console.log(error)
+        res.json({
+            status: "error",
+            error
+        })
     }
-});
+})
 
 const port = process.env.PORT || 6500;
 
