@@ -57,7 +57,7 @@ app.get("/", (req, res) => {
     res.send("Welcome to filegem cron-job server")
 })
 
-app.delete("/deleteFiles", async(req, res) => {
+app.get("/deleteFiles", async(req, res) => {
     try {
         const authClient = await authorize();
 
@@ -66,6 +66,13 @@ app.delete("/deleteFiles", async(req, res) => {
 
         const files = await FileModel.find({ uploadDate: { $gte: twentyFourHoursAgo } });
         console.log(files)
+
+        if(!files){
+            res.json({
+                status: "ok",
+                message: "No files found"
+            })
+        }
 
         files.forEach((file) => deleteFileFromDrive(authClient, file.googleDriveId))
 
